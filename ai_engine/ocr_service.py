@@ -1,39 +1,38 @@
-# ai_engine/ocr_service.py
-import easyocr
-import numpy as np
+
+import pytesseract
 from PIL import Image
 import io
-import re
 
-reader = None
-
-def get_reader():
-    global reader
-    if reader is None:
-        reader = easyocr.Reader(['en'], gpu=False)
-    return reader
-
+# ⚠️ Windows path (change if different)
+pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 def extract_text_from_image(image_bytes: bytes) -> str:
-    reader = get_reader()
     image = Image.open(io.BytesIO(image_bytes))
-    img_array = np.array(image)
-    results = reader.readtext(img_array)
-
-   
-    text = " ".join([r[1] for r in results]) if results else ""
+    text = pytesseract.image_to_string(image)
     return text
 
+import re
 
 def extract_medicine_names(raw_text: str) -> list:
-    
- 
-    # Match medicine-like patterns
-    pattern = r'\b[A-Z][a-zA-Z0-9\-]*(?:\s\d+(?:mg|ML|mg)?)?\b'
+    raw_text = raw_text.lower()
 
-    matches = re.findall(pattern, raw_text)
+    # remove noise
+    raw_text = re.sub(r'[^a-zA-Z0-9\s]', ' ', raw_text)
 
-    # Clean + unique
-    medicines = list(set([m.strip() for m in matches if len(m) > 3]))
+    words = raw_text.split()
 
-    return medicines[:5]
+    candidates = []
+
+    for w in words:
+        # medicine patterns
+        if len(w) > 4:
+            if any(suffix in w for suffix in [
+                "mab","cillin","prazole","olol","azole","statin","vir","ine","cin"
+            ]):
+                candidates.append(w)
+
+    # fallback if nothing found
+    if not candidates:
+        candidates = [w for w in words if len(w) > 5]
+
+    return candidates[:5]

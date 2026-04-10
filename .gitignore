@@ -1,0 +1,14 @@
+# environment variables (VERY IMPORTANT)
+.env
+*.env
+
+# virtual environments
+venv/
+.venv/
+
+# python cache
+__pycache__/
+*.pyc
+
+# data files (big files)
+*.csv

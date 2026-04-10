@@ -1,36 +1,39 @@
-import google.generativeai as genai
 import os
-import json
 from dotenv import load_dotenv
+from google import genai
 
 load_dotenv()
 
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+api_key = os.getenv("GEMINI_API_KEY")
 
-model = genai.GenerativeModel("gemini-1.5-flash")
-
+client = genai.Client(api_key=api_key)
 def enhance_with_ai(data):
 
-    prompt = f"""
-    Improve this medicine data:
+    if "error" in data:
+        return data
 
-    {json.dumps(data)}
+    api_key = os.getenv("GEMINI_API_KEY")
 
-    Return JSON only:
-    {{
-      "purpose": "",
-      "safety_note": "",
-      "better_explanation": ""
-    }}
-    """
+    # 🔒 SAFETY: if key missing, skip AI
+    if not api_key:
+        data["ai_explanation"] = "AI not configured"
+        return data
 
     try:
-        res = model.generate_content(prompt)
-        text = res.text.strip().replace("```json", "").replace("```", "")
-        ai_data = json.loads(text)
+        prompt = f"""
+Explain this medicine in simple terms:
+{data}
+Keep it short.
+"""
 
-        data.update(ai_data)
-        return data
+        response = client.models.generate_content(
+            model="gemini-2.0-flash",
+            contents=prompt
+        )
 
-    except:
-        return data
+        data["ai_explanation"] = response.text
+
+    except Exception:
+        data["ai_explanation"] = "AI temporarily unavailable"
+
+    return data
