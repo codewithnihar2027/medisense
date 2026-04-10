@@ -1,13 +1,20 @@
 import pandas as pd
+import requests
 from rapidfuzz import process
 import re
+import os
 
 # -----------------------
 # LOAD DATA
 # -----------------------
-df = pd.read_csv("data/medicines_clean.csv")
+BASE_DIR = os.path.abspath(os.path.join(__file__, "../../../../"))
+CSV_PATH = os.path.join(BASE_DIR, "data", "medicines_clean.csv")
 
-df['brand_name_clean'] = df['brand_name'].str.lower().str.strip()
+print("CSV PATH:", CSV_PATH)
+
+df = pd.read_csv(CSV_PATH)
+
+df['brand_name_clean'] = df['brand_name'].astype(str).str.lower().str.strip()
 df['salt_clean'] = df['salt_clean'].astype(str).str.lower().str.strip()
 df['comp1'] = df['comp1'].astype(str).str.lower().str.strip()
 df['comp2'] = df['comp2'].astype(str).str.lower().str.strip()
@@ -36,25 +43,62 @@ def prefer_tablet(df_subset):
 def is_pure_single_salt(row, query):
     comp1 = str(row.get('comp1', '')).lower().strip()
     comp2 = str(row.get('comp2', '')).lower().strip()
-
     return (query in comp1) and (comp2 == "" or comp2 == "nan")
 
 
 # -----------------------
-# SMART MATCH (fallback)
+# 🔥 IMPROVED FUZZY MATCH (KEY FIX)
 # -----------------------
 def smart_match(name):
     name = name.lower().strip()
+
     choices = df['brand_name_clean'].dropna().tolist()
 
-    matches = process.extract(name, choices, limit=5)
-    matches = [m for m in matches if m[1] > 70]
+    match = process.extractOne(name, choices)
 
-    if not matches:
+    if match:
+        matched_name, score, _ = match
+        print("FUZZY MATCH:", matched_name, "Score:", score)
+
+        # ✅ relaxed threshold (IMPORTANT FIX)
+        if score >= 75:
+            return df[df['brand_name_clean'] == matched_name]['brand_name'].values[0]
+
+    return None
+
+
+# -----------------------
+# OPENFDA API
+# -----------------------
+def fetch_from_openfda(query):
+    try:
+        query = query.lower().strip()
+
+        url = f"https://api.fda.gov/drug/label.json?search={query}&limit=1"
+        response = requests.get(url, timeout=5)
+
+        if response.status_code != 200:
+            return None
+
+        data = response.json()
+
+        if "results" not in data:
+            return None
+
+        result = data["results"][0]
+
+        return {
+            "input_medicine": query,
+            "source": "OpenFDA",
+            "generic_name": result.get("openfda", {}).get("generic_name", ["N/A"])[0],
+            "manufacturer": result.get("openfda", {}).get("manufacturer_name", ["N/A"])[0],
+            "purpose": result.get("purpose", ["N/A"])[0],
+            "warnings": result.get("warnings", ["N/A"])[0]
+        }
+
+    except Exception as e:
+        print("OpenFDA error:", e)
         return None
-
-    best = matches[0][0]
-    return df[df['brand_name_clean'] == best]['brand_name'].values[0]
 
 
 # -----------------------
@@ -67,12 +111,7 @@ def affordability_score(original, cheapest):
     savings = (original - cheapest) / original
     return round(max(min(savings * 10, 10), 0), 1)
 
-def internet_fallback(query):
-    return {
-        "input_medicine": query,
-        "note": "⚠️ Not found in dataset, using AI knowledge",
-        "message": "This medicine may not exist in local dataset. Try generic name.",
-    }
+
 # -----------------------
 # MAIN FUNCTION
 # -----------------------
@@ -81,7 +120,7 @@ def get_alternatives(medicine_name):
     query = medicine_name.lower().strip()
 
     # =======================
-    # STEP 1: STRICT GENERIC MATCH (PURE ONLY)
+    # STEP 1: PURE GENERIC MATCH
     # =======================
     generic_match = df[
         df.apply(lambda row: is_pure_single_salt(row, query), axis=1)
@@ -107,12 +146,21 @@ def get_alternatives(medicine_name):
 
         else:
             # =======================
-            # STEP 3: FUZZY MATCH
+            # STEP 3: 🔥 FUZZY MATCH (MAIN FIX)
             # =======================
             matched_name = smart_match(query)
 
-            if not matched_name:
-                return internet_fallback(medicine_name)
+            if matched_name is None:
+                print("→ No dataset match, trying API")
+
+                api_data = fetch_from_openfda(medicine_name)
+
+                if api_data:
+                    return api_data
+
+                return {
+                    "error": "Medicine not found in dataset or OpenFDA"
+                }
 
             med = df[df['brand_name'] == matched_name].iloc[0]
             salt = med['salt_clean']
