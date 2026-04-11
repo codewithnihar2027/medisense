@@ -60,7 +60,6 @@ async def scan_medicine(file: UploadFile = File(...)):
         if not raw_text:
             return {"error": "No text detected"}
 
-        # 🔥 SIMPLE EXTRACTION
         medicine_name = extract_medicine_name(raw_text)
         print("EXTRACTED:", medicine_name)
 
@@ -72,11 +71,15 @@ async def scan_medicine(file: UploadFile = File(...)):
         if "error" not in result:
             result = enhance_with_ai(result)
 
-        return {
-            "ocr_text": raw_text,
-            "detected_medicine": medicine_name,
-            "result": result
-        }
+        # ✅ FIX: merge instead of nesting
+        result["ocr_text"] = raw_text
+        result["detected_medicine"] = medicine_name
+
+        return result
+
+    except Exception as e:
+        print("SCAN ERROR:", e)
+        return {"error": "Scan failed"}
 
     except Exception as e:
         print("SCAN ERROR:", e)

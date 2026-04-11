@@ -2,8 +2,6 @@ import React, { useState } from 'react'
 import { Search, AlertCircle } from 'lucide-react'
 import axios from 'axios'
 
-const API = import.meta.env.VITE_API_URL
-
 const SearchComponent = ({ onResults, onLoading }) => {
   const [medicineName, setMedicineName] = useState('')
   const [error, setError] = useState('')
@@ -20,7 +18,7 @@ const SearchComponent = ({ onResults, onLoading }) => {
     onLoading(true)
 
     try {
-      const response = await axios.post(`${API}/api/search`, {
+      const response = await axios.post("/api/search", {
         medicine_name: medicineName.trim()
       })
 
@@ -28,7 +26,6 @@ const SearchComponent = ({ onResults, onLoading }) => {
 
     } catch (err) {
       console.error('Search error:', err)
-
       setError(err.response?.data?.error || 'Search failed')
     } finally {
       onLoading(false)

@@ -1,8 +1,6 @@
 import React, { useState } from 'react'
-import { Camera, Upload, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import axios from 'axios'
-
-const API = import.meta.env.VITE_API_URL
 
 const OCRComponent = ({ onResults, onLoading }) => {
   const [selectedFile, setSelectedFile] = useState(null)
@@ -49,10 +47,14 @@ const OCRComponent = ({ onResults, onLoading }) => {
     onLoading(true)
 
     const formData = new FormData()
-    formData.append('file', selectedFile)
+    formData.append('file', selectedFile)   // ✅ must match backend
 
     try {
-      const response = await axios.post(`${API}/api/scan`, formData)
+      const response = await axios.post("/api/scan", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data"
+        }
+      })
 
       onResults(response.data)
 
@@ -99,7 +101,6 @@ const OCRComponent = ({ onResults, onLoading }) => {
         ) : (
           <>
             <p className="mb-3">Upload or drag image</p>
-
             <input type="file" onChange={handleFileChange} />
           </>
         )}
