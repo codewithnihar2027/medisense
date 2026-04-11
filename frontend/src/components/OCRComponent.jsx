@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
-import { Camera, Upload, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { Camera, Upload, AlertCircle } from 'lucide-react'
 import axios from 'axios'
+
+const API = import.meta.env.VITE_API_URL
 
 const OCRComponent = ({ onResults, onLoading }) => {
   const [selectedFile, setSelectedFile] = useState(null)
@@ -21,8 +23,7 @@ const OCRComponent = ({ onResults, onLoading }) => {
   const handleDrop = (e) => {
     e.preventDefault()
     setIsDragging(false)
-    const file = e.dataTransfer.files[0]
-    handleFileSelect(file)
+    handleFileSelect(e.dataTransfer.files[0])
   }
 
   const handleDragOver = (e) => {
@@ -35,8 +36,7 @@ const OCRComponent = ({ onResults, onLoading }) => {
   }
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    handleFileSelect(file)
+    handleFileSelect(e.target.files[0])
   }
 
   const handleUpload = async () => {
@@ -52,16 +52,13 @@ const OCRComponent = ({ onResults, onLoading }) => {
     formData.append('file', selectedFile)
 
     try {
-      const response = await axios.post('/api/scan', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      })
+      const response = await axios.post(`${API}/api/scan`, formData)
 
       onResults(response.data)
+
     } catch (err) {
       console.error('OCR error:', err)
-      setError('Failed to process image. Please try again.')
+      setError(err.response?.data?.error || 'Scan failed')
     } finally {
       onLoading(false)
     }
@@ -75,104 +72,46 @@ const OCRComponent = ({ onResults, onLoading }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Scan Prescription
-        </h2>
-        <p className="text-gray-600">
-          Upload a prescription image to automatically detect medicines
-        </p>
-      </div>
 
-      {/* Upload Area */}
-      <div className="space-y-4">
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            isDragging
-              ? 'border-primary-500 bg-primary-50'
-              : 'border-gray-300 hover:border-gray-400'
-          }`}
-        >
-          {preview ? (
-            <div className="space-y-4">
-              <img
-                src={preview}
-                alt="Prescription preview"
-                className="mx-auto max-h-64 rounded-lg shadow-md"
-              />
-              <div className="flex justify-center space-x-3">
-                <button
-                  onClick={handleUpload}
-                  className="btn-primary flex items-center space-x-2"
-                >
-                  <Camera className="h-5 w-5" />
-                  <span>Process Image</span>
-                </button>
-                <button
-                  onClick={resetUpload}
-                  className="btn-secondary flex items-center space-x-2"
-                >
-                  <Upload className="h-5 w-5" />
-                  <span>Choose Another</span>
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <Camera className="mx-auto h-12 w-12 text-gray-400" />
-              <div>
-                <p className="text-lg font-medium text-gray-900 mb-2">
-                  Drop prescription image here
-                </p>
-                <p className="text-sm text-gray-600 mb-4">or</p>
-                <label className="btn-secondary cursor-pointer inline-flex items-center space-x-2">
-                  <Upload className="h-5 w-5" />
-                  <span>Browse Files</span>
-                  <input
-                    type="file"
-                    onChange={handleFileChange}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </label>
-              </div>
-              <p className="text-xs text-gray-500">
-                Supports: JPG, PNG, GIF (Max 10MB)
-              </p>
-            </div>
-          )}
-        </div>
+      <h2 className="text-2xl font-bold mb-4">Scan Prescription</h2>
 
-        {error && (
-          <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-            <AlertCircle className="h-5 w-5" />
-            <span className="text-sm">{error}</span>
-          </div>
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        className={`border-2 border-dashed p-6 rounded-lg text-center ${
+          isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+        }`}
+      >
+
+        {preview ? (
+          <>
+            <img src={preview} className="mx-auto max-h-60 mb-4" />
+
+            <button onClick={handleUpload} className="btn-primary mr-2">
+              Scan
+            </button>
+
+            <button onClick={resetUpload} className="btn-secondary">
+              Reset
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="mb-3">Upload or drag image</p>
+
+            <input type="file" onChange={handleFileChange} />
+          </>
         )}
       </div>
 
-      <div className="mt-6 space-y-4">
-        <div className="p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold text-blue-900 mb-2">📸 Tips for Best Results</h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• Ensure good lighting and clear focus</li>
-            <li>• Place prescription on flat surface</li>
-            <li>• Avoid shadows and glare</li>
-            <li>• Crop to show only prescription text</li>
-            <li>• Supported formats: JPG, PNG, GIF</li>
-          </ul>
+      {error && (
+        <div className="text-red-600 mt-4 flex items-center gap-2">
+          <AlertCircle size={18} />
+          {error}
         </div>
+      )}
 
-        <div className="p-4 bg-yellow-50 rounded-lg">
-          <h3 className="font-semibold text-yellow-900 mb-2">🔒 Privacy Notice</h3>
-          <p className="text-sm text-yellow-800">
-            Images are processed locally and not stored. Your prescription data remains private.
-          </p>
-        </div>
-      </div>
     </div>
   )
 }

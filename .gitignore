@@ -1,14 +1,75 @@
-# environment variables (VERY IMPORTANT)
+# ========================
+# ENV VARIABLES
+# ========================
 .env
 *.env
 
-# virtual environments
+# ========================
+# PYTHON
+# ========================
 venv/
 .venv/
-
-# python cache
 __pycache__/
 *.pyc
 
-# data files (big files)
+# ========================
+# NODE / FRONTEND
+# ========================
+node_modules/
+frontend/node_modules/
+dist/
+build/
+.vite/
+
+# ========================
+# OS FILES
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# LOGS
+# ========================
+*.log
+
+# ========================
+# DATA FILES
+# ========================
+*.csv# ========================
+# ENV VARIABLES
+# ========================
+.env
+*.env
+
+# ========================
+# PYTHON
+# ========================
+venv/
+.venv/
+__pycache__/
+*.pyc
+
+# ========================
+# NODE / FRONTEND
+# ========================
+node_modules/
+frontend/node_modules/
+dist/
+build/
+.vite/
+
+# ========================
+# OS FILES
+# ========================
+.DS_Store
+Thumbs.db
+
+# ========================
+# LOGS
+# ========================
+*.log
+
+# ========================
+# DATA FILES
+# ========================
 *.csv

@@ -1,6 +1,8 @@
 import React, { useState } from 'react'
-import { Search, Loader2, AlertCircle } from 'lucide-react'
+import { Search, AlertCircle } from 'lucide-react'
 import axios from 'axios'
+
+const API = import.meta.env.VITE_API_URL
 
 const SearchComponent = ({ onResults, onLoading }) => {
   const [medicineName, setMedicineName] = useState('')
@@ -8,7 +10,7 @@ const SearchComponent = ({ onResults, onLoading }) => {
 
   const handleSearch = async (e) => {
     e.preventDefault()
-    
+
     if (!medicineName.trim()) {
       setError('Please enter a medicine name')
       return
@@ -18,14 +20,16 @@ const SearchComponent = ({ onResults, onLoading }) => {
     onLoading(true)
 
     try {
-      const response = await axios.post('/api/search', {
+      const response = await axios.post(`${API}/api/search`, {
         medicine_name: medicineName.trim()
       })
 
       onResults(response.data)
+
     } catch (err) {
       console.error('Search error:', err)
-      setError('Failed to search medicine. Please try again.')
+
+      setError(err.response?.data?.error || 'Search failed')
     } finally {
       onLoading(false)
     }
@@ -38,58 +42,35 @@ const SearchComponent = ({ onResults, onLoading }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-lg p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Search for Medicine
-        </h2>
-        <p className="text-gray-600">
-          Enter a medicine name to find alternatives and compare prices
-        </p>
-      </div>
+
+      <h2 className="text-2xl font-bold mb-4">
+        Search Medicine
+      </h2>
 
       <form onSubmit={handleSearch} className="space-y-4">
-        <div>
-          <label htmlFor="medicine-search" className="block text-sm font-medium text-gray-700 mb-2">
-            Medicine Name
-          </label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <input
-              id="medicine-search"
-              type="text"
-              value={medicineName}
-              onChange={handleInputChange}
-              placeholder="e.g., Dolo 650, Paracetamol, Crocin..."
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder-gray-500"
-            />
-          </div>
-        </div>
+
+        <input
+          type="text"
+          value={medicineName}
+          onChange={handleInputChange}
+          placeholder="e.g. Dolo 650, Crocin"
+          className="w-full border p-3 rounded-lg"
+        />
 
         {error && (
-          <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-            <AlertCircle className="h-5 w-5" />
-            <span className="text-sm">{error}</span>
+          <div className="text-red-600 flex items-center gap-2">
+            <AlertCircle size={18} />
+            {error}
           </div>
         )}
 
-        <button
-          type="submit"
-          className="w-full btn-primary flex items-center justify-center space-x-2"
-        >
-          <Search className="h-5 w-5" />
-          <span>Search Medicine</span>
+        <button className="btn-primary w-full flex justify-center items-center gap-2">
+          <Search size={18} />
+          Search
         </button>
+
       </form>
 
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-        <h3 className="font-semibold text-blue-900 mb-2">💡 Pro Tips</h3>
-        <ul className="text-sm text-blue-800 space-y-1">
-          <li>• Try both brand names (Dolo 650) and generic names (Paracetamol)</li>
-          <li>• Include dosage information for better matches</li>
-          <li>• Check spelling for accurate results</li>
-          <li>• Use scan feature for prescription images</li>
-        </ul>
-      </div>
     </div>
   )
 }

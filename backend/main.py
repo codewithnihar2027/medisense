@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.app.routes import search
 
-app = FastAPI(title="MediSmart API")
+app = FastAPI(title="MediSense API")
 
 app.add_middleware(
     CORSMiddleware,
