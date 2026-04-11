@@ -1,7 +1,7 @@
 import React from 'react'
 import { 
   Pill, 
-  Rupee, 
+  IndianRupee,   // ✅ FIXED
   TrendingDown, 
   CheckCircle, 
   AlertTriangle,
@@ -24,7 +24,6 @@ const ResultsComponent = ({ results, loading }) => {
 
   if (!results) return null
 
-  // ERROR CASE
   if (results.error) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -39,7 +38,6 @@ const ResultsComponent = ({ results, loading }) => {
     )
   }
 
-  // NO ALTERNATIVES
   if (results.note && results.note.includes('No valid alternatives')) {
     return (
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -64,12 +62,9 @@ const ResultsComponent = ({ results, loading }) => {
           <div>
             <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
               <Pill className="h-6 w-6 text-blue-600" />
-
-              {/* 🔥 FIXED HERE */}
               <span>
                 {results?.matched_medicine || results?.input_medicine}
               </span>
-
             </h2>
 
             {results?.generic_equivalent && (
@@ -81,7 +76,7 @@ const ResultsComponent = ({ results, loading }) => {
 
           <div className="text-right">
             <div className="text-3xl font-bold text-gray-900 flex items-center space-x-1">
-              <Rupee className="h-8 w-8" />
+              <IndianRupee className="h-8 w-8" /> {/* ✅ FIXED */}
               <span>{results?.price}</span>
             </div>
             <p className="text-sm text-gray-600">Current Price</p>
@@ -104,14 +99,12 @@ const ResultsComponent = ({ results, loading }) => {
           </div>
         )}
 
-        {/* NOTE */}
         {results?.note && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-700">{results.note}</p>
           </div>
         )}
 
-        {/* AI */}
         {results?.ai_explanation && (
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mt-3">
             <p className="text-sm text-purple-700">{results.ai_explanation}</p>
@@ -136,7 +129,8 @@ const ResultsComponent = ({ results, loading }) => {
                 <h4 className="font-semibold">{alt.brand_name}</h4>
 
                 <p className="text-green-600 font-bold flex items-center">
-                  <Rupee className="h-4 w-4" /> {alt.price}
+                  <IndianRupee className="h-4 w-4" /> {/* ✅ FIXED */}
+                  {alt.price}
                 </p>
 
                 {alt.manufacturer && (
